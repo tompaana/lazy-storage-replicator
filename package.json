@@ -1,0 +1,64 @@
+{
+  "name": "lazy-storage-replicator",
+  "version": "0.0.1",
+  "description": "This is a proof-of-concept implementation of lazy storage syncing between Azure Blob Storage and AWS S3.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tompaana/lazy-storage-replicator"
+  },
+  "scripts": {
+    "postinstall": "rm -rf dist/ && tsc"
+  },
+  "dependencies": {
+    "@types/node": "^7.0.5",
+    "azure-storage": "^2.2.0",
+    "aws-sdk": "^2.56.0",
+    "typescript": "^2.2.1",
+    "mime": "^1.3.6",
+    "underscore": "latest",
+    "node-uuid": "latest"
+  },
+  "devDependencies": {
+    "@types/azure": "^0.9.19",
+    "@types/request-promise": "^4.1.33",
+    "eslint": "^3.18.0",
+    "eslint-config-airbnb": "^14.1.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^4.0.0",
+    "eslint-plugin-react": "^6.10.3",
+    "nodeunit": "^0.10.2",
+    "tslint": "^5.0.0"
+  },
+  "typings": "dist/",
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "src",
+    "tsconfig.json"
+  ],
+  "eslintConfig": {
+    "extends": "airbnb",
+    "rules": {
+      "no-console": [
+        "warn",
+        {
+          "allow": [
+            "warn",
+            "error"
+          ]
+        }
+      ],
+      "no-param-reassign": [
+        "error",
+        {
+          "props": false
+        }
+      ],
+      "comma-dangle": [
+        "error",
+        "never"
+      ]
+    }
+  }
+}

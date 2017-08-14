@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es6",
+    "sourceMap": true,
+    "outDir": "dist",
+    "experimentalDecorators": true,
+    "declaration": true,
+    "declarationDir": "dist"
+  },
+  "include": [
+    "src/types",
+    "src/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
