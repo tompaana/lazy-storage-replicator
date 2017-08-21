@@ -30,11 +30,11 @@ export class MultiStorageClient implements IStorageClient {
      * Initializes the client.
      */
     public initialize(azureBlobStorageAccountName: string, azureBlobStorageAccessKey: string,
-            awsS3AccessKeyId: string, awsS3SecretAccessKey: string, awsS3Region: string,
-            defaultAzureBlobStorageContainerName?: string, defaultAwsS3BucketName?: string) {
+        awsS3AccessKeyId: string, awsS3SecretAccessKey: string, awsS3Region: string,
+        defaultAzureBlobStorageContainerName?: string, defaultAwsS3BucketName?: string) {
         this.azureBlobStorageClient = new AzureBlobStorageClient();
         this.azureBlobStorageClient.initialize(azureBlobStorageAccountName, azureBlobStorageAccessKey, defaultAzureBlobStorageContainerName);
-        
+
         this.awsS3Client = new AwsS3Client();
         this.awsS3Client.initialize(awsS3AccessKeyId, awsS3SecretAccessKey, awsS3Region, defaultAwsS3BucketName);
     }
@@ -58,8 +58,8 @@ export class MultiStorageClient implements IStorageClient {
             await this.awsS3Client.fileExists(storageFilePath, bucketName)
         ])
 
-        if (fileExistsBlob) { 
-             result |= StorageType.AzureBlobStorage;
+        if (fileExistsBlob) {
+            result |= StorageType.AzureBlobStorage;
         }
 
         if (fileExistsAws) {
@@ -99,12 +99,12 @@ export class MultiStorageClient implements IStorageClient {
         try {
             blobsFoundInAzureBlobStorage =
                 await this.azureBlobStorageClient.listFilesWithPrefix(storageFileNamePrefix, containerName);
-        } catch(error) {
+        } catch (error) {
             console.error('Failed to list files: ' + error);
         }
-        
+
         const filesFoundInS3 = await this.awsS3Client.listFilesWithPrefix(storageFileNamePrefix, bucketName);
-        
+
         return {
             blobsFoundInAzureBlobStorage,
             filesFoundInS3
@@ -124,10 +124,10 @@ export class MultiStorageClient implements IStorageClient {
         containerName = containerName || this.azureBlobStorageClient.getDefaultContainerName();
         bucketName = bucketName || this.awsS3Client.getDefaultBucketName() || containerName;
         let fileNames: string[] = [];
-        
+
         try {
             fileNames = await this.azureBlobStorageClient.listFileNamesWithPrefix(storageFileNamePrefix, containerName);
-        } catch(error) {
+        } catch (error) {
             console.error('Failed to list file names: ' + error);
         }
 
@@ -147,7 +147,7 @@ export class MultiStorageClient implements IStorageClient {
      * @return Null, if successful. An error otherwise.
      */
     public async downloadFileToDiskAndReplicateIfNecessary(storageFilePath: string, localFilePath:
-            string, containerName?: string, bucketName?: string): Promise<any> {
+        string, containerName?: string, bucketName?: string): Promise<any> {
         containerName = containerName || this.azureBlobStorageClient.getDefaultContainerName();
         bucketName = bucketName || this.awsS3Client.getDefaultBucketName() || containerName;
         let storagesContainingFile: StorageType = await this.storagesContainingFile(storageFilePath, containerName, bucketName);
@@ -169,7 +169,7 @@ export class MultiStorageClient implements IStorageClient {
                 await this.awsS3Client.downloadFileToDisk(storageFilePath, localFilePath, bucketName);
                 await this.azureBlobStorageClient.uploadFile(localFilePath, storageFilePath, containerName);
             }
-        } catch(error) {
+        } catch (error) {
             result = error;
         }
 
@@ -247,15 +247,25 @@ export class MultiStorageClient implements IStorageClient {
      * @return The storages where the file was successfully uploaded.
      */
     public async uploadFileToStorage(localFilePath: string, storageFilePath: string, storageToUse?: StorageType,
-            containerName?: string, bucketName?: string, contentType?: string): Promise<StorageType> {
+        containerName?: string, bucketName?: string, contentType?: string): Promise<StorageType> {
         storageToUse = storageToUse || (StorageType.AzureBlobStorage | StorageType.AwsS3);
         containerName = containerName || this.azureBlobStorageClient.getDefaultContainerName();
         bucketName = bucketName || this.awsS3Client.getDefaultBucketName() || containerName;
         let storagesWhereFileWasUploaded: StorageType = StorageType.Undefined;
 
+        let azurePromise: Promise<any> 
+        if (storageToUse & StorageType.AzureBlobStorage) {
+            azurePromise = this.azureBlobStorageClient.uploadFile(localFilePath, storageFilePath, containerName)
+        }
+
+        let awsPromise: Promise<any>
+        if (storageToUse & StorageType.AwsS3) {
+            awsPromise = this.awsS3Client.uploadFile(localFilePath, storageFilePath, bucketName, contentType);
+        }
+
         if (storageToUse & StorageType.AzureBlobStorage) {
             try {
-                await this.azureBlobStorageClient.uploadFile(localFilePath, storageFilePath, containerName);
+                await azurePromise;
                 storagesWhereFileWasUploaded |= StorageType.AzureBlobStorage;
             } catch (error) {
                 console.error('Failed to upload file to Azure Blob Storage: ' + error);
@@ -264,7 +274,7 @@ export class MultiStorageClient implements IStorageClient {
 
         if (storageToUse & StorageType.AwsS3) {
             try {
-                await this.awsS3Client.uploadFile(localFilePath, storageFilePath, bucketName, contentType);
+                await awsPromise;
                 storagesWhereFileWasUploaded |= StorageType.AwsS3;
             } catch (error) {
                 console.error('Failed to upload file to AWS S3: ' + error);
@@ -286,9 +296,9 @@ export class MultiStorageClient implements IStorageClient {
     public async uploadFile(localFilePath: string, storageFilePath: string, containerAndBucketName?: string): Promise<StorageType> {
         let thisInstance: MultiStorageClient = this;
 
-        return new Promise<StorageType>(function(resolve) {
+        return new Promise<StorageType>(function (resolve) {
             thisInstance.uploadFileToStorage(localFilePath, storageFilePath,
-                (StorageType.AzureBlobStorage | StorageType.AwsS3), containerAndBucketName).then(function(result) {
+                (StorageType.AzureBlobStorage | StorageType.AwsS3), containerAndBucketName).then(function (result) {
                     resolve(result);
                 });
         });
@@ -307,15 +317,18 @@ export class MultiStorageClient implements IStorageClient {
         bucketName = bucketName || this.awsS3Client.getDefaultBucketName() || containerName;
         var result = null;
 
+        let azurePromise = this.azureBlobStorageClient.deleteFiles(filePaths, containerName);
+        let awsPromise = this.awsS3Client.deleteFiles(filePaths, bucketName);
+
         try {
-            await this.azureBlobStorageClient.deleteFiles(filePaths, containerName);
-        } catch(error) {
+            await azurePromise;
+        } catch (error) {
             result = error;
         };
 
         try {
-            await this.awsS3Client.deleteFiles(filePaths, bucketName);
-        } catch(error) {
+            await awsPromise;
+        } catch (error) {
             result = error;
         };
 
@@ -331,7 +344,7 @@ export class MultiStorageClient implements IStorageClient {
      * @return Null, if succssful. An error otherwise.
      */
     public async deleteFile(filePath: string, containerName?: string, bucketName?: string): Promise<any> {
-        let filePaths: string[] = [ filePath ];
+        let filePaths: string[] = [filePath];
         return await this.deleteFiles(filePaths, containerName, bucketName);
     }
 }
