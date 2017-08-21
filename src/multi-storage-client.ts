@@ -8,7 +8,8 @@ import { AwsS3Client } from './aws-s3-client';
 export enum StorageType {
     Undefined = 0,
     AzureBlobStorage = 1,
-    AwsS3 = 2
+    AwsS3 = 2,
+    Both = 3
 };
 
 /**
@@ -52,15 +53,16 @@ export class MultiStorageClient implements IStorageClient {
         bucketName = bucketName || this.awsS3Client.getDefaultBucketName() || containerName;
         let result: StorageType = StorageType.Undefined;
 
-        let fileExistsResult: boolean = await this.azureBlobStorageClient.fileExists(storageFilePath, containerName);
+        var [fileExistsBlob, fileExistsAws] = await Promise.all([
+            await this.azureBlobStorageClient.fileExists(storageFilePath, containerName),
+            await this.awsS3Client.fileExists(storageFilePath, bucketName)
+        ])
 
-        if (fileExistsResult) {
+        if (fileExistsBlob) { 
              result |= StorageType.AzureBlobStorage;
         }
 
-        fileExistsResult = await this.awsS3Client.fileExists(storageFilePath, bucketName);
-
-        if (fileExistsResult) {
+        if (fileExistsAws) {
             result |= StorageType.AwsS3;
         }
 
