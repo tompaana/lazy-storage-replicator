@@ -56,7 +56,7 @@ export class MultiStorageClient implements IStorageClient {
         var [fileExistsBlob, fileExistsAws] = await Promise.all([
             await this.azureBlobStorageClient.fileExists(storageFilePath, containerName),
             await this.awsS3Client.fileExists(storageFilePath, bucketName)
-        ])
+        ]);
 
         if (fileExistsBlob) {
             result |= StorageType.AzureBlobStorage;
@@ -91,7 +91,7 @@ export class MultiStorageClient implements IStorageClient {
      * @param bucketName The name of the AWS S3 bucket.
      * @return A 2-tuple, where blobs found in Azure Blob Storage are first and files found in AWS S3 second.
      */
-    public async listFilesWithPrefix(storageFileNamePrefix: string, containerName?: string, bucketName?: string): Promise<{}> {
+    public async listFilesWithPrefix(storageFileNamePrefix: string, containerName?: string, bucketName?: string): Promise<any> {
         containerName = containerName || this.azureBlobStorageClient.getDefaultContainerName();
         bucketName = bucketName || this.awsS3Client.getDefaultBucketName() || containerName;
         var blobsFoundInAzureBlobStorage = null;
@@ -100,7 +100,7 @@ export class MultiStorageClient implements IStorageClient {
             blobsFoundInAzureBlobStorage =
                 await this.azureBlobStorageClient.listFilesWithPrefix(storageFileNamePrefix, containerName);
         } catch (error) {
-            console.error('Failed to list files: ' + error);
+            console.error('Failed to list files in Azure Blob Storage: ' + error);
         }
 
         const filesFoundInS3 = await this.awsS3Client.listFilesWithPrefix(storageFileNamePrefix, bucketName);
@@ -128,7 +128,7 @@ export class MultiStorageClient implements IStorageClient {
         try {
             fileNames = await this.azureBlobStorageClient.listFileNamesWithPrefix(storageFileNamePrefix, containerName);
         } catch (error) {
-            console.error('Failed to list file names: ' + error);
+            console.error('Failed to list file names in Azure Blob Storage: ' + error);
         }
 
         fileNames.concat(await this.awsS3Client.listFileNamesWithPrefix(storageFileNamePrefix, bucketName));
@@ -253,12 +253,14 @@ export class MultiStorageClient implements IStorageClient {
         bucketName = bucketName || this.awsS3Client.getDefaultBucketName() || containerName;
         let storagesWhereFileWasUploaded: StorageType = StorageType.Undefined;
 
-        let azurePromise: Promise<any> 
+        let azurePromise: Promise<any>;
+
         if (storageToUse & StorageType.AzureBlobStorage) {
             azurePromise = this.azureBlobStorageClient.uploadFile(localFilePath, storageFilePath, containerName)
         }
 
-        let awsPromise: Promise<any>
+        let awsPromise: Promise<any>;
+
         if (storageToUse & StorageType.AwsS3) {
             awsPromise = this.awsS3Client.uploadFile(localFilePath, storageFilePath, bucketName, contentType);
         }
@@ -324,13 +326,13 @@ export class MultiStorageClient implements IStorageClient {
             await azurePromise;
         } catch (error) {
             result = error;
-        };
+        }
 
         try {
             await awsPromise;
         } catch (error) {
             result = error;
-        };
+        }
 
         return result;
     }

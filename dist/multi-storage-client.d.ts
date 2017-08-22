@@ -8,6 +8,7 @@ export declare enum StorageType {
     Undefined = 0,
     AzureBlobStorage = 1,
     AwsS3 = 2,
+    Both = 3,
 }
 /**
  * A simple multi storage client that wraps both Azure Blob Storage client and AWS S3 client.
@@ -52,7 +53,7 @@ export declare class MultiStorageClient implements IStorageClient {
      * @param bucketName The name of the AWS S3 bucket.
      * @return A 2-tuple, where blobs found in Azure Blob Storage are first and files found in AWS S3 second.
      */
-    listFilesWithPrefix(storageFileNamePrefix: string, containerName?: string, bucketName?: string): Promise<{}>;
+    listFilesWithPrefix(storageFileNamePrefix: string, containerName?: string, bucketName?: string): Promise<any>;
     /**
      * Lists the names of the blobs/files in the storages matching the given prefix.
      * Note that this is can be an expensive method to call!
